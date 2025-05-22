@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Texture Channel Combiner</title>
+    <style>
+        :root {
+            --bg-color: #343541;
+            --panel-color: #40414f;
+            --text-color: #ececf1;
+            --accent-color: #10a37f;
+            --border-color: #565869;
+            --dropzone-active: #2b2c3a;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        h1 {
+            color: var(--accent-color);
+            margin-bottom: 30px;
+        }
+        
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            max-width: 1000px;
+        }
+        
+        .channel-panel {
+            background-color: var(--panel-color);
+            border-radius: 8px;
+            padding: 15px;
+            width: 280px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .channel-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .channel-color {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        
+        .red { background-color: #ff3e3e; }
+        .green { background-color: #4CAF50; }
+        .blue { background-color: #2196F3; }
+        
+        .drop-zone {
+            border: 2px dashed var(--border-color);
+            border-radius: 5px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .drop-zone.active {
+            background-color: var(--dropzone-active);
+            border-color: var(--accent-color);
+        }
+        
+        .drop-zone p {
+            margin: 5px 0;
+        }
+        
+        .preview {
+            max-width: 100%;
+            max-height: 80px;
+            margin-top: 10px;
+            display: none;
+        }
+        
+        .toggle-switch {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+        
+        .toggle-option {
+            flex: 1;
+            text-align: center;
+            padding: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            background-color: var(--bg-color);
+            margin: 0 2px;
+        }
+        
+        .toggle-option.selected {
+            background-color: var(--accent-color);
+        }
+        
+        .generate-btn {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background-color 0.3s;
+        }
+        
+        .generate-btn:hover {
+            background-color: #0d8a6d;
+        }
+        
+        .result-container {
+            margin-top: 30px;
+            text-align: center;
+        }
+        
+        .result-image {
+            max-width: 300px;
+            max-height: 300px;
+            border: 1px solid var(--border-color);
+            margin-top: 15px;
+            display: none;
+        }
+        
+        .download-btn {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 10px;
+            display: none;
+        }
+        
+        .filename {
+            font-size: 12px;
+            color: #aaa;
+            margin-top: 5px;
+            word-break: break-all;
+        }
+
+        .progress-container {
+            width: 100%;
+            max-width: 300px;
+            margin: 15px 0;
+            display: none;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background-color: var(--border-color);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background-color: var(--accent-color);
+            transition: width 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <h1>Texture Channel Combiner</h1>
+    
+    <div class="container">
+        <div class="channel-panel">
+            <div class="channel-title">
+                <span class="channel-color red"></span>
+                Occlusion (Red)
+            </div>
+            <div class="drop-zone" id="red-dropzone">
+                <p>Drag & Drop AO Texture</p>
+                <p>or click to select</p>
+                <img class="preview" id="red-preview">
+                <p class="filename" id="red-filename"></p>
+            </div>
+            <div class="toggle-switch" id="red-toggle">
+                <div class="toggle-option selected" data-value="255">White</div>
+                <div class="toggle-option" data-value="128">Gray</div>
+                <div class="toggle-option" data-value="0">Black</div>
+            </div>
+        </div>
+        
+        <div class="channel-panel">
+            <div class="channel-title">
+                <span class="channel-color green"></span>
+                Roughness (Green)
+            </div>
+            <div class="drop-zone" id="green-dropzone">
+                <p>Drag & Drop Roughness Texture</p>
+                <p>or click to select</p>
+                <img class="preview" id="green-preview">
+                <p class="filename" id="green-filename"></p>
+            </div>
+            <div class="toggle-switch" id="green-toggle">
+                <div class="toggle-option" data-value="255">White</div>
+                <div class="toggle-option selected" data-value="128">Gray</div>
+                <div class="toggle-option" data-value="0">Black</div>
+            </div>
+        </div>
+        
+        <div class="channel-panel">
+            <div class="channel-title">
+                <span class="channel-color blue"></span>
+                Metallic (Blue)
+            </div>
+            <div class="drop-zone" id="blue-dropzone">
+                <p>Drag & Drop Metallic Texture</p>
+                <p>or click to select</p>
+                <img class="preview" id="blue-preview">
+                <p class="filename" id="blue-filename"></p>
+            </div>
+            <div class="toggle-switch" id="blue-toggle">
+                <div class="toggle-option" data-value="255">White</div>
+                <div class="toggle-option" data-value="128">Gray</div>
+                <div class="toggle-option selected" data-value="0">Black</div>
+            </div>
+        </div>
+    </div>
+    
+    <button class="generate-btn" id="generate-btn">Generate Combined Texture</button>
+    
+    <div class="progress-container" id="progress-container">
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+        </div>
+    </div>
+    
+    <div class="result-container">
+        <div id="result-text"></div>
+        <img class="result-image" id="result-image">
+        <button class="download-btn" id="download-btn">Download</button>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Elements
+            const dropzones = {
+                red: document.getElementById('red-dropzone'),
+                green: document.getElementById('green-dropzone'),
+                blue: document.getElementById('blue-dropzone')
+            };
+            
+            const previews = {
+                red: document.getElementById('red-preview'),
+                green: document.getElementById('green-preview'),
+                blue: document.getElementById('blue-preview')
+            };
+            
+            const filenames = {
+                red: document.getElementById('red-filename'),
+                green: document.getElementById('green-filename'),
+                blue: document.getElementById('blue-filename')
+            };
+            
+            const toggles = {
+                red: document.getElementById('red-toggle'),
+                green: document.getElementById('green-toggle'),
+                blue: document.getElementById('blue-toggle')
+            };
+            
+            const generateBtn = document.getElementById('generate-btn');
+            const resultImage = document.getElementById('result-image');
+            const downloadBtn = document.getElementById('download-btn');
+            const resultText = document.getElementById('result-text');
+            const progressContainer = document.getElementById('progress-container');
+            const progressFill = document.getElementById('progress-fill');
+
+            // State
+            const textures = {
+                red: null,
+                green: null,
+                blue: null
+            };
+            
+            const defaultValues = {
+                red: 255, // white
+                green: 128, // gray
+                blue: 0 // black
+            };
+            
+            // Initialize toggle switches
+            for (const channel in toggles) {
+                const options = toggles[channel].querySelectorAll('.toggle-option');
+                options.forEach(option => {
+                    option.addEventListener('click', function() {
+                        if (textures[channel]) return; // Don't allow changes when texture is loaded
+                        
+                        options.forEach(opt => opt.classList.remove('selected'));
+                        this.classList.add('selected');
+                        defaultValues[channel] = parseInt(this.dataset.value);
+                    });
+                });
+            }
+            
+            // Set up drop zones
+            for (const channel in dropzones) {
+                const dropzone = dropzones[channel];
+                const preview = previews[channel];
+                const filename = filenames[channel];
+                const toggle = toggles[channel];
+                
+                // Highlight drop zone when dragging over
+                dropzone.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    this.classList.add('active');
+                });
+                
+                dropzone.addEventListener('dragleave', function() {
+                    this.classList.remove('active');
+                });
+                
+                // Handle drop
+                dropzone.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    this.classList.remove('active');
+                    
+                    if (e.dataTransfer.files.length) {
+                        handleFile(e.dataTransfer.files[0], channel);
+                    }
+                });
+                
+                // Handle click to select file
+                dropzone.addEventListener('click', function() {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = 'image/*';
+                    
+                    input.addEventListener('change', function() {
+                        if (this.files.length) {
+                            handleFile(this.files[0], channel);
+                        }
+                    });
+                    
+                    input.click();
+                });
+                
+                function handleFile(file, channel) {
+                    if (!file.type.match('image.*')) {
+                        alert('Please select an image file');
+                        return;
+                    }
+                    
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        // Clear previous texture if exists
+                        if (textures[channel]) {
+                            URL.revokeObjectURL(textures[channel].src);
+                        }
+                        
+                        textures[channel] = new Image();
+                        textures[channel].src = e.target.result;
+                        
+                        textures[channel].onload = function() {
+                            preview.src = e.target.result;
+                            preview.style.display = 'block';
+                            filename.textContent = file.name;
+                            
+                            // Disable toggle when texture is loaded
+                            const options = toggle.querySelectorAll('.toggle-option');
+                            options.forEach(opt => {
+                                opt.style.opacity = '0.5';
+                                opt.style.cursor = 'default';
+                            });
+                        };
+                    };
+                    reader.readAsDataURL(file);
+                }
+            }
+            
+            // Generate combined texture
+            generateBtn.addEventListener('click', async function() {
+                generateBtn.disabled = true;
+                progressContainer.style.display = 'block';
+                progressFill.style.width = '0%';
+                
+                // Show processing status
+                resultText.textContent = 'Processing...';
+                resultImage.style.display = 'none';
+                downloadBtn.style.display = 'none';
+                
+                // Create canvas in memory
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Determine dimensions from textures or use default
+                let width = 1024, height = 1024;
+                for (const channel in textures) {
+                    if (textures[channel]) {
+                        width = textures[channel].width;
+                        height = textures[channel].height;
+                        break;
+                    }
+                }
+                
+                canvas.width = width;
+                canvas.height = height;
+                
+                // Create initial image data with default values
+                const imageData = ctx.createImageData(width, height);
+                for (let i = 0; i < imageData.data.length; i += 4) {
+                    imageData.data[i] = defaultValues.red;     // R
+                    imageData.data[i+1] = defaultValues.green; // G
+                    imageData.data[i+2] = defaultValues.blue;  // B
+                    imageData.data[i+3] = 255;                // A
+                }
+                
+                // Update progress
+                progressFill.style.width = '30%';
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                // Apply textures where available
+                for (const channel in textures) {
+                    if (textures[channel]) {
+                        // Create temp canvas to read texture data
+                        const tempCanvas = document.createElement('canvas');
+                        tempCanvas.width = width;
+                        tempCanvas.height = height;
+                        const tempCtx = tempCanvas.getContext('2d');
+                        
+                        // Draw texture to temp canvas
+                        tempCtx.drawImage(textures[channel], 0, 0, width, height);
+                        const textureData = tempCtx.getImageData(0, 0, width, height).data;
+                        
+                        // Update corresponding channel in imageData
+                        const channelIndex = channel === 'red' ? 0 : 
+                                           channel === 'green' ? 1 : 2;
+                        
+                        for (let i = 0; i < imageData.data.length; i += 4) {
+                            const textureIdx = (Math.floor(i/4) * 4);
+                            // Use red channel of texture (assuming grayscale)
+                            imageData.data[i + channelIndex] = textureData[textureIdx];
+                        }
+                        
+                        // Update progress
+                        progressFill.style.width = `${30 + 20 * (channel === 'red' ? 1 : channel === 'green' ? 2 : 3)}%`;
+                        await new Promise(resolve => setTimeout(resolve, 50));
+                    }
+                }
+                
+                // Draw final image to canvas
+                ctx.putImageData(imageData, 0, 0);
+                
+                // Update progress
+                progressFill.style.width = '90%';
+                
+                // Convert to data URL
+                const dataUrl = canvas.toDataURL('image/png');
+                
+                // Display result
+                resultImage.src = dataUrl;
+                resultImage.style.display = 'block';
+                downloadBtn.style.display = 'inline-block';
+                resultText.textContent = 'Combined texture generated:';
+                
+                // Update progress
+                progressFill.style.width = '100%';
+                
+                // Set up download
+                downloadBtn.onclick = function() {
+                    const link = document.createElement('a');
+                    link.download = 'combined_texture.png';
+                    link.href = dataUrl;
+                    link.click();
+                };
+                
+                generateBtn.disabled = false;
+                
+                // Hide progress after delay
+                setTimeout(() => {
+                    progressContainer.style.display = 'none';
+                }, 1000);
+            });
+        });
+    </script>
+</body>
+</html>
